@@ -1,0 +1,12 @@
+# Local reproduction lab for CVE-2025-29927. Runs the vulnerable and patched
+# Next.js apps side by side on localhost. LOCAL USE ONLY — do not expose these
+# to any network; the vulnerable app intentionally allows an auth bypass.
+services:
+  vulnerable:
+    build: ./vulnerable-app
+    ports:
+      - "127.0.0.1:3001:3000"   # vulnerable app -> http://127.0.0.1:3001
+  patched:
+    build: ./patched-app
+    ports:
+      - "127.0.0.1:3002:3000"   # patched app    -> http://127.0.0.1:3002

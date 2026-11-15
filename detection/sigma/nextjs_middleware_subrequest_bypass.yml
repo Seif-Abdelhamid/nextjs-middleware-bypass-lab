@@ -1,0 +1,42 @@
+title: Next.js Middleware Authorization Bypass via x-middleware-subrequest (CVE-2025-29927)
+id: 4f0a1c2e-7b3d-4a6f-9c1e-2d5b8a0f1c34
+status: experimental
+description: >
+  Detects inbound HTTP requests carrying the internal Next.js header
+  "x-middleware-subrequest". Legitimate external clients never send this header;
+  Next.js uses it only for its own in-process subrequests. An external request
+  that carries it is an attempt to exploit CVE-2025-29927 to skip middleware and
+  bypass authorization. The patched runtime pairs it with a secret
+  "x-middleware-subrequest-id"; filter internal traffic on that pairing if your
+  logs capture it.
+references:
+  - https://github.com/advisories/GHSA-f82v-jwr5-mffw
+  - https://github.com/vercel/next.js/pull/77202
+author: Seif Abdelhamid
+date: 2026/11/15
+tags:
+  - attack.initial_access
+  - attack.t1190          # Exploit Public-Facing Application
+  - attack.defense_evasion
+  - cve.2025.29927
+logsource:
+  category: proxy
+  definition: >
+    Requires a proxy/web/WAF log source that captures request headers (many do
+    not by default). Map the field below to your pipeline: e.g. the raw header
+    block, a JSON "headers" object key, or a dedicated captured-header field.
+detection:
+  # Match any logged field that records the header name. Adjust field names to
+  # your taxonomy; this covers common proxy/webserver/JSON header fields.
+  selection_header_field:
+    cs-headers|contains: 'x-middleware-subrequest'
+  selection_generic:
+    '|all':
+      - '*x-middleware-subrequest*'
+  condition: selection_header_field or selection_generic
+falsepositives:
+  - >
+    Internal Next.js subrequests, which carry a valid x-middleware-subrequest-id
+    matching the server's per-process secret. Exclude those if your logs record
+    the id. Security scanners and your own regression tests also trip this rule.
+level: high
